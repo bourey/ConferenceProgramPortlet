@@ -1,0 +1,43 @@
+{
+    "sessions": [
+        {
+            "title": "Session 1",
+            "date": "10-Jun-2012",
+            "time": "9:00 AM",
+            "room": "room",
+            "track": "first",
+            "level": "easy",
+            "type": "one",
+            "presenters": [
+            "jsmith"
+            ],
+            "details": "details"
+        },
+        {
+            "title": "Getting to Know 2-3-98",
+            "date": "10-Jun-2012",
+            "time": "11:00 AM",
+            "room": "room",
+            "track": "second",
+            "level": "easy",
+            "type": "one",
+            "presenters": [
+            "adoe"
+            ],
+            "details": "details"
+        },
+        {
+            "title": "Getting to Know 2-3-98",
+            "date": "11-Jun-2012",
+            "time": "9:00 AM",
+            "room": "room",
+            "track": "first",
+            "level": "hard",
+            "type": "two",
+            "presenters": [
+            "jsmith"
+            ],
+            "details": "details"
+        }
+    ]
+}
