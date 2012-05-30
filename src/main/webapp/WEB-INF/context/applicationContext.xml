@@ -25,9 +25,13 @@
   xmlns:context="http://www.springframework.org/schema/context"
   xmlns:p="http://www.springframework.org/schema/p"
   xmlns:util="http://www.springframework.org/schema/util"
+  xmlns:ehcache="http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring"
   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
   http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-  http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+  http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+  http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring/ehcache-spring-1.1.xsd">
+
+    <context:annotation-config />
 
     <bean
         class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -42,8 +46,67 @@
             </list>
         </property>
     </bean>
+
+    <bean id="elementsProvider" class="org.jasig.resourceserver.utils.aggr.ResourcesElementsProviderImpl"/>
+
+    <bean id="pageCachingFilter" class="org.jasig.portlet.conference.program.mvc.AggregationAwareFilterBean">
+        <property name="elementsProvider" ref="elementsProvider"/>
+        <property name="filter">
+            <bean class="org.jasig.resourceserver.utils.cache.ConfigurablePageCachingFilter">
+                <constructor-arg ref="cacheManager"/>
+                <constructor-arg value="org.jasig.portal.utils.cache.ConfigurablePageCachingFilter.PAGE_CACHE"/>
+            </bean>
+        </property>
+    </bean>
     
-    <bean class="org.jasig.portlet.conference.program.dao.ConferenceSessionDao"/>
+    <bean id="CacheExpiresFilter" class="org.jasig.portlet.conference.program.mvc.AggregationAwareFilterBean">
+        <property name="elementsProvider" ref="elementsProvider"/>
+        <property name="filter">
+            <bean class="org.jasig.resourceserver.utils.filter.PathBasedCacheExpirationFilter">
+                <property name="cacheMaxAges">
+                    <map>
+                        <entry key="/**/*.aggr.min.js" value="31536000"/>
+                        <entry key="/**/*.aggr.min.css" value="31536000"/>
+                        <entry key="/service/**" value="31536000"/>
+                        <entry key="/**/*.png" value="3600"/>
+                    </map>
+                </property>
+            </bean>
+        </property>
+    </bean>
+
+    <!-- 
+     | CACHE CONFIGURATION
+     +-->
+    
+    <ehcache:annotation-driven />
+    <ehcache:config cache-manager="cacheManager"/>
+    
+    <!-- EHCache Configuration -->
+    <bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean"
+        p:configLocation="classpath:/ehcache.xml"/>
+    
+    <bean class="org.springframework.web.client.RestTemplate">
+        <property name="messageConverters">
+            <util:list>
+                <bean class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">
+                    <property name="supportedMediaTypes">
+                        <list>
+                            <util:constant static-field="org.springframework.http.MediaType.APPLICATION_JSON"/>
+                            <util:constant static-field="org.springframework.http.MediaType.TEXT_PLAIN"/>
+                        </list>
+                    </property>
+                </bean>
+            </util:list>
+        </property>
+    </bean>
+    
+    <bean class="org.jasig.portlet.conference.program.dao.ConferenceSessionDao">
+        <property name="cache">
+            <bean class="org.springframework.cache.ehcache.EhCacheFactoryBean"
+                p:cacheManager-ref="cacheManager" p:cacheName="programCache"/>
+        </property>
+    </bean>
 
     <bean id="viewSelector" class="org.jasig.portlet.conference.program.mvc.ThemeNameViewSelectorImpl"/>
 

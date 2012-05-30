@@ -21,6 +21,7 @@ package org.jasig.portlet.conference.program.mvc.servlet;
 import org.jasig.portlet.conference.program.dao.ConferenceSessionDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -34,8 +35,8 @@ public class ConferenceProgramFeedController {
         this.dao = dao;
     }
 
-    @RequestMapping("program.json")
-    public ModelAndView getProgram() {
+    @RequestMapping("program/{hash}.json")
+    public ModelAndView getProgram(@PathVariable String hash) {
         ModelAndView mav = new ModelAndView("json");
         mav.addObject("sessions", dao.getProgram().getSessions());
         return mav;

@@ -91,7 +91,8 @@ public class MainController {
         mav.addObject("levels", dao.getLevels());
 
         PortletPreferences preferences = request.getPreferences();
-        mav.addObject("mysessions", preferences.getValues("sessions", new String[]{}));
+        mav.addObject("mysessions", preferences.getValues("mysessions", new String[]{}));
+        mav.addObject("hash", dao.getProgram().hashCode());
 
         if(logger.isDebugEnabled()) {
             logger.debug("Rendering main view");
@@ -115,7 +116,7 @@ public class MainController {
         } else {
             mine.remove(title);
         }
-        preferences.setValues("sessions", mine.toArray(new String[]{}));
+        preferences.setValues("mysessions", mine.toArray(new String[]{}));
         
         preferences.store();
         

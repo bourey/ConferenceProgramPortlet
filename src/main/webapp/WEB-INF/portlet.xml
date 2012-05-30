@@ -42,20 +42,10 @@
         <supports>
             <mime-type>text/html</mime-type>
             <portlet-mode>view</portlet-mode>
-            <portlet-mode>edit</portlet-mode>
-            <portlet-mode>help</portlet-mode>
         </supports>
         <portlet-info>
             <title>ConferenceProgramPortlet Portlet</title>
         </portlet-info>
     </portlet>
-    <user-attribute>
-        <description>User Display Name</description>
-        <name>displayName</name>
-    </user-attribute>
-    <user-attribute>
-        <description>User Email Address</description>
-        <name>mail</name>
-    </user-attribute>
 
 </portlet-app>

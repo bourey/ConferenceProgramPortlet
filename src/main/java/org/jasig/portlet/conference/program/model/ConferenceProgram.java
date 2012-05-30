@@ -18,10 +18,14 @@
  */
 package org.jasig.portlet.conference.program.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConferenceProgram {
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
+public class ConferenceProgram implements Serializable {
 
     private List<ConferenceSession> sessions = new ArrayList<ConferenceSession>();
 
@@ -33,4 +37,23 @@ public class ConferenceProgram {
         this.sessions = sessions;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ConferenceProgram)) {
+            return false;
+        }
+        
+        final ConferenceProgram program = (ConferenceProgram) o;
+        return new EqualsBuilder()
+            .append(this.sessions, program.getSessions())
+            .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+            .append(this.sessions)
+            .hashCode();
+    }
+    
 }

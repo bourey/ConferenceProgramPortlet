@@ -25,14 +25,15 @@
 <script type="text/javascript">
         
     up.jQuery(function () {
-        var $, mysessions, sessions, sessionTimeNode, sessionListingNode, currentDateIndex;
+        var $, mysessions, sessions, itemTemplate, linkItemTemplate, headerTemplate, currentDateIndex, currentView, lastView;
         
         $ = up.jQuery;
         
         currentDateIndex = 1;
 
-        sessionTimeNode = $("#${n} .browse-sessions .session-list .session-time").hide();
-        sessionListingNode = $("#${n} .browse-sessions .session-list .session").hide();
+        itemTemplate = $("#${n} .list-template .item-template");
+        linkItemTemplate = $("#${n} .list-template .link-item-template");
+        headerTemplate = $("#${n} .list-template .header-template");
         
         mysessions = [];
         <c:forEach items="${ mysessions }" var="session">
@@ -53,88 +54,130 @@
             return (a.timestamp - b.timestamp);
         };
         
-        var renderSessionList = function(list, container, includeTimes) {
-            var lastTime;
+        var renderSessionList = function(list, includeTimes) {
+            var lastTime, container, isBrowse;
+            
+            container = $("#${n} " + currentView + " .session-list");
+            isBrowse = (currentView == ".browse-sessions");
 
             // make sure the sessions are sorted
             list.sort(sortSessions);
             
             // remove any previous results
-            container.find("li:gt(1)").remove();
+            container.find("li").remove();
 
             $(list).each(function (idx, session) { 
                 if (includeTimes && session.time !== lastTime) {
-                    var newTimeNode = sessionTimeNode.clone().text(session.time);
+                    var newTimeNode = headerTemplate.clone().text(session.time);
                     container.append(newTimeNode);
                     lastTime = session.time;
                 }
 
-                var newNode = sessionListingNode.clone();
+                var newNode = linkItemTemplate.clone();
                 $(newNode).find("a").click(function () { showDetails(session); });
-                $(newNode).find(".session-title").text(session.title);
-                $(newNode).find(".session-location").text(includeTimes ? session.room : session.time + " " + session.displayDate);
+                $(newNode).find("h3").text(session.title);
+                $(newNode).find("p").text(includeTimes ? session.room : session.time + " " + session.displayDate);
                 container.append(newNode);                    
             });
             
-            container.find("li:gt(1)").show();
+            container.find("li").show();
         };
-
-        var showView = function(clazz) {
+        
+        var showView = function(view) {
             $("#${n} .browse-sessions").hide();
+            $("#${n} .my-sessions").hide();
             $("#${n} .search-results").hide();
             $("#${n} .session-search-form").hide();
             $("#${n} .session-details").hide();
-            $(clazz).show();
+
+            if (view) {
+                lastView = currentView;
+                currentView = view;
+            }
+            
+            $("#${n} " + currentView).show();
         };
         
-        var showSessions = function () {
+        var showSessions = function (clazz) {
             var matching = [];
             var dateKey = $("#${n} .session-search-form [name=date]").find("option:eq(" + currentDateIndex + ")").attr("value");
             var dateName = $("#${n} .session-search-form [name=date]").find("option:eq(" + currentDateIndex + ")").text();
-            
+
+            if (clazz) {
+                lastView = currentView;
+                currentView = clazz;
+            }
+
             $(sessions).each(function (idx, session) {
-                if (session.date === dateKey) {
+                if (session.date === dateKey && (currentView != '.my-sessions' || $.inArray(session.title, mysessions) >= 0)) {
                     matching.push(session);
                 }
             });
 
-            $("#${n} .browse-sessions .date-name").text(dateName);
+            $("#${n} .date-name").text(dateName);
             if (currentDateIndex == 1) {
-                $("#${n} .browse-sessions .program-date-back-link").hide();
+                $("#${n} .program-date-back-link").hide();
             } else {
-                $("#${n} .browse-sessions .program-date-back-link").show();
+                $("#${n} .program-date-back-link").show();
             }
             
             if (currentDateIndex == $("#${n} .session-search-form [name=date] option").size()-1) {
-                $("#${n} .browse-sessions .program-date-forward-link").hide();
+                $("#${n} .program-date-forward-link").hide();
             } else {
-                $("#${n} .browse-sessions .program-date-forward-link").show();
+                $("#${n} .program-date-forward-link").show();
             }
             
-            renderSessionList(matching, $("#${n} .browse-sessions .session-list"), true);
-            showView("#${n} .browse-sessions");
+            renderSessionList(matching, true);
+            showView();
         };
         
         var showDetails = function (session) {
             var detailsView = $("#${n} .session-details");
             
             // bind session to data
-            detailsView.find("session-title").text(session.title);
+            detailsView.find(".session-title").text(session.title);
             detailsView.find(".time").text(session.time + " on " + session.displayDate);
             detailsView.find(".room").text(session.room);
-            detailsView.find(".track").text(session.track);
-            detailsView.find(".level").text(session.level);
+            if (session.track && session.track !== 'Unknown') {
+                detailsView.find(".track").show().find(".track-name").text(session.track);
+            } else {
+                detailsView.find(".track").hide().find(".track-name").text("");
+            }
+            if (session.level && session.level !== 'Unknown') {
+                detailsView.find(".level").show().find(".level-name").text(session.level);
+            } else {
+                detailsView.find(".level").hide().find(".level-name").text("");
+            }
             detailsView.find(".details").text(session.details);
+            
+            if (session.presenters.length > 0) {
+                $(".presenter-list").text("");
+                $(session.presenters).each(function (idx, presenter) {
+                    $(detailsView).find(".presenter-list").append($(document.createElement("li")).text(presenter));
+                });
+                $(detailsView).find(".presenters").show();
+            } else {
+                $(detailsView).find(".presenters").hide();
+            }
+
+            detailsView.find(".remove-session-link").show().unbind('click').click(function () { 
+                removeSession(session.title); 
+                $(detailsView).find(".remove-session-link").hide();
+                $(detailsView).find(".add-session-link").show();
+            });
+            detailsView.find(".add-session-link").show().unbind('click').click(function () { 
+                addSession(session.title);
+                $(detailsView).find(".remove-session-link").show();
+                $(detailsView).find(".add-session-link").hide();
+            });
 
             if ($.inArray(session.title, mysessions) >= 0) {
-                detailsView.find(".remove-session-link").show().unbind('click').click(function () { removeSession(session.title); });
                 detailsView.find(".add-session-link").hide();
             } else {
-                detailsView.find(".add-session-link").show().unbind('click').click(function () { addSession(session.title); });
                 detailsView.find(".remove-session-link").hide();
             }
-            
-            showView("#${n} .session-details");
+
+            showView(".session-details");
         };
 
         var changeDate = function (days) {
@@ -168,9 +211,11 @@
                 }
             });
 
-            renderSessionList(matching, $(".search-results .session-list"), false);
+            lastView = currentView;
+            currentView = ".search-results";
+            renderSessionList(matching, false);
 
-            showView("#${n} .search-results");
+            showView();
             
             return false;
 
@@ -180,21 +225,24 @@
             
             $("#${n} .session-search-form").submit(search);
             
-            $("#${n} .program-search-button").click(function () { showView("#${n} .session-search-form"); });
-            $("#${n} .search-back-button").click(function() { showView("#${n} .browse-sessions"); });
-            $("#${n} .matches-back-button").click(function () { showView("#${n} .session-search-form"); });
-            $("#${n} .details-back-button").click(function () { showView("#${n} .browse-sessions"); });
+            $("#${n} .program-search-button").click(function () { showView(".session-search-form"); });
+            $("#${n} .search-back-button").click(function() { showView(".browse-sessions"); });
+            $("#${n} .matches-back-button").click(function () { showView(".session-search-form"); });
+            $("#${n} .details-back-button").click(function () { showView(lastView); });
             
             $("#${n} .program-date-back-link").click(function () { changeDate(-1); });
             $("#${n} .program-date-forward-link").click(function () { changeDate(1); });
             
-    
+            $("#${n} .my-sessions-button").click(function () { showSessions(".my-sessions"); });
+            $("#${n} .browse-sessions-button").click(function () { showSessions(".browse-sessions"); });
+                
             $.get(
-                '<c:url value="/service/program.json"/>',
+                '<c:url value="/service/program/${hash}.json"/>',
                 {},
                 function (data) {
                     sessions = data.sessions;
-                    showSessions();
+                    showSessions(".browse-sessions");
+                    showView();
                 },
                 "json"
             );
@@ -206,6 +254,15 @@
 </script>
 
 <div id="${n}">
+
+    <ul class="list-template" data-role="listview" style="display:none">
+        <li data-role="list-divider" class="header-template">Header</li>
+        <li class="link-item-template">
+            <a href="javascript:;"><h3>Title</h3><p>Desc</p></a>
+        </li>
+        <li class="item-template">Item</li>
+    </ul>
+
     <!-- session list by date -->
     <div class="browse-sessions">
         <div data-role="header" class="titlebar portlet-titlebar">
@@ -214,30 +271,45 @@
                 <span class="date-name"></span>
                 <a data-role="button" data-icon="arrow-r" data-iconpos="notext" data-inline="true" class="program-date-forward-link" href="javascript:;">&gt;</a>
             </h2>
-            <a href="javascript:;" class="ui-btn-right program-search-button" data-icon="search">
+            <a href="javascript:;" class="ui-btn-right program-search-button" data-icon="search" data-iconpos="notext">
                 <span>Search</span>
+            </a>
+            <a href="javascript:;" class="ui-btn-left my-sessions-button" data-icon="star" data-iconpos="notext">
+                <span>Mine</span>
             </a>
         </div>
         <div data-role="content" class="portlet-content">
-            <ul data-role="listview" class="session-list">
-                <li data-role="list-divider" class="session-time">Time</li>
-                <li class="session">
-                    <a href="javascript:;"><h3 class="session-title">Session</h3>
-                    <p class="session-location">Location</p>
-                </li>
-            </ul>
+            <ul data-role="listview" class="session-list"></ul>
+        </div>
+    </div>
+
+    <div class="my-sessions" style="display: none;">
+        <div data-role="header" class="titlebar portlet-titlebar">
+            <h2>
+                <a data-role="button" data-icon="arrow-l" data-iconpos="notext" data-inline="true" class="program-date-back-link" href="javascript:;">&lt;</a>
+                <span class="date-name"></span>
+                <a data-role="button" data-icon="arrow-r" data-iconpos="notext" data-inline="true" class="program-date-forward-link" href="javascript:;">&gt;</a>
+            </h2>
+            <a href="javascript:;" class="ui-btn-right program-search-button" data-icon="search" data-iconpos="notext">
+                <span>Search</span>
+            </a>
+            <a href="javascript:;" class="ui-btn-left browse-sessions-button" data-icon="home" data-iconpos="notext">
+                <span>Home</span>
+            </a>
+        </div>
+        <div data-role="content" class="portlet-content">
+            <ul data-role="listview" class="session-list"></ul>
         </div>
     </div>
 
     <!-- session search results -->
     <div class="search-results" style="display:none">
         <div data-role="header" class="titlebar portlet-titlebar">
-            <a data-role="button" data-icon="back" data-inline="true" class="matches-back-button" href="javascript:;">Back</a>
-            <h2>Matches</h2>
+            <a data-role="button"  data-icon="back" data-inline="true" href="javascript:;" class="matches-back-button">Back</a>
+            <h2>Search</h2>
         </div>
         <div data-role="content" class="portlet-content">
-            <ul data-role="listview" class="session-list">
-            </ul>
+            <ul data-role="listview" class="session-list"></ul>
         </div>
     </div>
 
@@ -249,49 +321,37 @@
         </div>
         <div data-role="content" class="portlet-content">
             <form class="session-search-form">
-                <div data-role="fieldcontain">
-                    <label for="date">Date</label>
-                    <select name="date" id="date">
-                        <option value="">Any</option>
-                        <c:forEach items="${ dates }" var="date">
-                            <option value="${ date.key }">${ date.value }</option>
-                        </c:forEach>
-                    </select>
-                </div>
-                <div data-role="fieldcontain">
-                    <label for="level">Level</label>
-                    <select name="level" id="level">
-                        <option value="">Any</option>
-                        <c:forEach items="${ levels }" var="level">
-                            <option>${ level }</option>
-                        </c:forEach>
-                    </select>
-                </div>
-                <div data-role="fieldcontain">
-                    <label for="type">Type</label>
-                    <select name="type" id="type">
-                        <option value="">Any</option>
-                        <c:forEach items="${ types }" var="type">
-                            <option>${ type }</option>
-                        </c:forEach>
-                    </select>
-                </div>
-                <div data-role="fieldcontain">
-                    <label for="track">Track</label>
-                    <select name="track" id="track">
-                        <option value="">Any</option>
-                        <c:forEach items="${ tracks }" var="track">
-                            <option>${ track }</option>
-                        </c:forEach>
-                    </select>
-                </div>
-                <div data-role="fieldcontain">
+                <div data-role="fieldcontain" class="ui-hidden-accessible">
                     <label for="title">Title</label>
                     <input id="title" name="title" type="text"/>
-                </div>
-                <div data-role="fieldcontain">
                     <label for="presenter">Presenter</label>
                     <input name="presenter" id="presenter" type="text"/>
+                    <fieldset data-role="controlgroup">
+                        <select name="date" id="date">
+                            <option value="">Any Date</option>
+                            <c:forEach items="${ dates }" var="date">
+                                <option value="${ date.key }">${ date.value }</option>
+                            </c:forEach>
+                        </select>
+                        <select name="level" id="level">
+                            <option value="">Any Level</option>
+                            <c:forEach items="${ levels }" var="level">
+                                <option>${ level }</option>
+                            </c:forEach>
+                        </select>
+                        <select name="type" id="type">
+                            <option value="">Any Type</option>
+                            <c:forEach items="${ types }" var="type">
+                                <option>${ type }</option>
+                            </c:forEach>
+                        </select>
+                        <select name="track" id="track">
+                            <option value="">Any Track</option>
+                            <c:forEach items="${ tracks }" var="track">
+                                <option>${ track }</option>
+                            </c:forEach>
+                        </select>
+                    </fieldset>
                 </div>
                 <div data-role="fieldcontain">
                     <input type="submit" value="Search"/>
@@ -306,16 +366,23 @@
             <h2>Details</h2>
         </div>
         <div data-role="content" class="portlet-content">
-            <h2 class="session-title"></h2>
+            <h3>
+                <a href="javascript:;" class="add-session-link"><img src="<c:url value="/images/bookmark-unselected.png"/>"/></a>
+                <a href="javascript:;" class="remove-session-link"><img src="<c:url value="/images/bookmark-selected.png"/>"/></a>
+                <span class="session-title"></span>
+            </h3>
             <p>When: <span class="time"/> on <span class="date"/></p>
             <p>Where: <span class="room"/></p>
-            <p class="track"></p>
-            <p class="level"></p>
-            <ul class="presenters">
-            </ul>
+            <p class="track">Track: <span class="track-name"></span></p>
+            <p class="level">Level: <span class="level-name"></span></p>
+            <br/>
             <p class="details"></p>
-            <p><a href="javascript:;" class="add-session-link">Add to my schedule</a></p>
-            <p><a href="javascript:;" class="remove-session-link">Remove from my schedule</a></p>
+            <br/>
+            
+            <h3 class="presenters">Presenters</h3>
+            <ul class="presenter-list">
+            </ul>
+            
         </div>
     </div>
 </div>

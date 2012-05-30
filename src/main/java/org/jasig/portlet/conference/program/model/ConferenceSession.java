@@ -18,14 +18,17 @@
  */
 package org.jasig.portlet.conference.program.model;
 
+import java.io.Serializable;
 import java.util.List;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.DateTimeFormatterBuilder;
 
-public class ConferenceSession {
+public class ConferenceSession implements Serializable {
 
     final static DateTimeFormatter providedDF = new DateTimeFormatterBuilder().appendPattern("dd-MMM-yyyy").toFormatter();
     final static DateTimeFormatter displayDF = new DateTimeFormatterBuilder().appendPattern("EEE MMMM d").toFormatter();
@@ -123,4 +126,41 @@ public class ConferenceSession {
         this.details = details;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        
+        if (!(o instanceof ConferenceSession)) {
+            return false;
+        }
+        
+        final ConferenceSession session = (ConferenceSession) o;
+        
+        return new EqualsBuilder()
+            .append(this.title, session.getTitle())
+            .append(this.date, session.getDate())
+            .append(this.time, session.getTime())
+            .append(this.room, session.getRoom())
+            .append(this.track, session.getTrack())
+            .append(this.level, session.getLevel())
+            .append(this.type, session.getType())
+            .append(this.presenters, session.getPresenters())
+            .append(this.details, session.getDetails())
+            .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+            .append(this.title)
+            .append(this.date)
+            .append(this.time)
+            .append(this.room)
+            .append(this.track)
+            .append(this.level)
+            .append(this.type)
+            .append(this.presenters)
+            .append(this.details)
+            .toHashCode();
+    }
+    
 }
