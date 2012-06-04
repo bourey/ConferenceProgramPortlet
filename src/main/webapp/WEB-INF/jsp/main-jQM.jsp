@@ -46,6 +46,7 @@
         };
 
         var removeSession = function(title) {
+            mysessions.splice($.inArray(title, mysessions), 1);
             $.post("<portlet:resourceURL/>", { add: false, title: title }, null, "json");
         };
 
@@ -76,7 +77,21 @@
                 var newNode = linkItemTemplate.clone();
                 $(newNode).find("a").click(function () { showDetails(session); });
                 $(newNode).find("h3").text(session.title);
-                $(newNode).find("p").text(includeTimes ? session.room : session.time + " " + session.displayDate);
+
+                var selectedImg = '<c:url value="/images/bookmark-selected.png"/>';
+                var unselectedImg = '<c:url value="/images/bookmark-unselected.png"/>';
+                
+                var img = $(document.createElement("img")).attr("src", $.inArray(session.title, mysessions) >= 0 ? selectedImg : unselectedImg).click(function () {
+                    if ($.inArray(session.title, mysessions) >= 0) {
+                        removeSession(session.title);
+                        $(this).attr("src", unselectedImg)
+                    } else {
+                        addSession(session.title);
+                        $(this).attr("src", selectedImg);
+                    }
+                    return false;
+                });
+                $(newNode).find("p").html("").append(img).append($(document.createElement("span")).text(includeTimes ? session.room : session.time + " " + session.displayDate));
                 container.append(newNode);                    
             });
             
@@ -95,18 +110,19 @@
                 currentView = view;
             }
             
+            if (currentView == '.my-sessions' || currentView == '.browse-sessions') {
+                showSessions();
+            } else if (currentView == '.search-results') {
+                search();
+            }
+            
             $("#${n} " + currentView).show();
         };
         
-        var showSessions = function (clazz) {
+        var showSessions = function () {
             var matching = [];
             var dateKey = $("#${n} .session-search-form [name=date]").find("option:eq(" + currentDateIndex + ")").attr("value");
             var dateName = $("#${n} .session-search-form [name=date]").find("option:eq(" + currentDateIndex + ")").text();
-
-            if (clazz) {
-                lastView = currentView;
-                currentView = clazz;
-            }
 
             $(sessions).each(function (idx, session) {
                 if (session.date === dateKey && (currentView != '.my-sessions' || $.inArray(session.title, mysessions) >= 0)) {
@@ -128,7 +144,6 @@
             }
             
             renderSessionList(matching, true);
-            showView();
         };
         
         var showDetails = function (session) {
@@ -211,19 +226,15 @@
                 }
             });
 
-            lastView = currentView;
-            currentView = ".search-results";
             renderSessionList(matching, false);
 
-            showView();
-            
             return false;
 
         };
 
         $(document).ready(function () {
             
-            $("#${n} .session-search-form").submit(search);
+            $("#${n} .session-search-form").submit(function () { showView(".search-results"); return false; });
             
             $("#${n} .program-search-button").click(function () { showView(".session-search-form"); });
             $("#${n} .search-back-button").click(function() { showView(".browse-sessions"); });
@@ -233,16 +244,15 @@
             $("#${n} .program-date-back-link").click(function () { changeDate(-1); });
             $("#${n} .program-date-forward-link").click(function () { changeDate(1); });
             
-            $("#${n} .my-sessions-button").click(function () { showSessions(".my-sessions"); });
-            $("#${n} .browse-sessions-button").click(function () { showSessions(".browse-sessions"); });
+            $("#${n} .my-sessions-button").click(function () { showView(".my-sessions"); });
+            $("#${n} .browse-sessions-button").click(function () { showView(".browse-sessions"); });
                 
             $.get(
                 '<c:url value="/service/program/${hash}.json"/>',
                 {},
                 function (data) {
                     sessions = data.sessions;
-                    showSessions(".browse-sessions");
-                    showView();
+                    showView(".browse-sessions");
                 },
                 "json"
             );
