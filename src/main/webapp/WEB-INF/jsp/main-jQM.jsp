@@ -71,9 +71,11 @@ ${n}.jQuery(document).ready(function () {
             <a href="javascript:;" class="ui-btn-right program-search-button" data-icon="search" data-iconpos="notext">
                 <span>Search</span>
             </a>
-            <a href="javascript:;" class="ui-btn-left my-sessions-button" data-icon="star" data-iconpos="notext">
-                <span>Mine</span>
-            </a>
+            <c:if test="${ authenticated }">
+                <a href="javascript:;" class="ui-btn-left my-sessions-button" data-icon="star" data-iconpos="notext">
+                    <span>Mine</span>
+                </a>
+            </c:if>
         </div>
         <div data-role="content" class="portlet-content">
             <ul data-role="listview" class="session-list"></ul>
