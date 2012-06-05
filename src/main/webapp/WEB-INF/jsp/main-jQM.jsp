@@ -67,16 +67,12 @@ ${n}.jQuery(document).ready(function () {
                 <span class="date-name"></span>
                 <a data-role="button" data-icon="arrow-r" data-iconpos="notext" data-inline="true" class="program-date-forward-link" href="javascript:;">&gt;</a>
             </h2>
-            <div class="toolbar">
-                <ul>            
-                    <li><a href="javascript:;" class="ui-btn-right program-search-button" data-icon="search" data-iconpos="notext">
-                        <span>Search</span>
-                    </a></li>
-                    <li><a href="javascript:;" class="ui-btn-left my-sessions-button" data-icon="star" data-iconpos="notext">
-                        <span>Mine</span>
-                    </a></li>
-                </ul>
-            </div>
+            <a href="javascript:;" class="ui-btn-right program-search-button" data-icon="search" data-iconpos="notext">
+                <span>Search</span>
+            </a>
+            <a href="javascript:;" class="ui-btn-left my-sessions-button" data-icon="star" data-iconpos="notext">
+                <span>Mine</span>
+            </a>
         </div>
         <div data-role="content" class="portlet-content">
             <ul data-role="listview" class="session-list"></ul>
@@ -90,15 +86,12 @@ ${n}.jQuery(document).ready(function () {
                 <span class="date-name"></span>
                 <a data-role="button" data-icon="arrow-r" data-iconpos="notext" data-inline="true" class="program-date-forward-link" href="javascript:;">&gt;</a>
             </h2>
-            <div class="toolbar">
-                <ul>            
-                    <li><a href="javascript:;" class="ui-btn-right program-search-button" data-icon="search" data-iconpos="notext">
-                        <span>Search</span>
-                    </a></li>
-                    <li><a href="javascript:;" class="ui-btn-left browse-sessions-button" data-icon="home" data-iconpos="notext">
-                        <span>Home</span>
-                    </a></li>
-                </ul>
+            <a href="javascript:;" class="ui-btn-right program-search-button" data-icon="search" data-iconpos="notext">
+                <span>Search</span>
+            </a>
+            <a href="javascript:;" class="ui-btn-left browse-sessions-button" data-icon="home" data-iconpos="notext">
+                <span>Home</span>
+            </a>
             </div>
         </div>
         <div data-role="content" class="portlet-content">
