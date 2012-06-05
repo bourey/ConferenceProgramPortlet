@@ -43,21 +43,25 @@ if (!conference.init) {
                     lastTime = session.time;
                 }
 
-                var newNode = linkItemTemplate.clone();
-                $(newNode).find("a").click(function () { showDetails(session, container, preferences); });
-                $(newNode).find("h3").text(session.title);
+                var newNode = $(linkItemTemplate.clone());
+                newNode.find("a").click(function () { showDetails(session, container, preferences); });
+                newNode.find("h3").text(session.title);
 
-                var img = $(document.createElement("img")).attr("src", $.inArray(session.title, preferences.mysessions) >= 0 ? preferences.selectedImg : preferences.unselectedImg).click(function () {
-                    if ($.inArray(session.title, preferences.mysessions) >= 0) {
-                        removeSession(session.title, container, preferences);
-                        $(this).attr("src", preferences.unselectedImg)
-                    } else {
-                        addSession(session.title, container, preferences);
-                        $(this).attr("src", preferences.selectedImg);
-                    }
-                    return false;
-                });
-                $(newNode).find("p").html("").append(img).append($(document.createElement("span")).text(includeTimes ? session.room : session.time + " " + session.displayDate));
+                newNode.find("p").html("")
+                if (preferences.authenticated) {
+                    var img = $(document.createElement("img")).attr("src", $.inArray(session.title, preferences.mysessions) >= 0 ? preferences.selectedImg : preferences.unselectedImg).click(function () {
+                        if ($.inArray(session.title, preferences.mysessions) >= 0) {
+                            removeSession(session.title, container, preferences);
+                            $(this).attr("src", preferences.unselectedImg)
+                        } else {
+                            addSession(session.title, container, preferences);
+                            $(this).attr("src", preferences.selectedImg);
+                        }
+                        return false;
+                    });
+                    newNode.find("p").append(img);
+                }
+                newNode.find("p").append($(document.createElement("span")).text(includeTimes ? session.room : session.time + " " + session.displayDate));
                 subcontainer.append(newNode);                    
             });
             
@@ -108,7 +112,7 @@ if (!conference.init) {
             } else {
                 container.find(".program-date-forward-link").show();
             }
-            
+
             renderSessionList(matching, true, container, preferences);
         };
         

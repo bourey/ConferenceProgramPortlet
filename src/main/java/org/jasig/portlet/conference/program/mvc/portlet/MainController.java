@@ -88,6 +88,7 @@ public class MainController {
         mav.addObject("tracks", dao.getTracks());
         mav.addObject("types", dao.getTypes());
         mav.addObject("levels", dao.getLevels());
+        mav.addObject("authenticated", request.getRemoteUser() != null);
 
         PortletPreferences preferences = request.getPreferences();
         mav.addObject("mysessions", preferences.getValues("mysessions", new String[]{}));

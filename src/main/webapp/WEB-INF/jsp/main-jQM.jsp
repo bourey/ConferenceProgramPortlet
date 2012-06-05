@@ -38,7 +38,8 @@ ${n}.jQuery(document).ready(function () {
         updateUrl: '<portlet:resourceURL/>',
         mysessions: [],
         selectedImg: '<c:url value="/images/bookmark-selected.png"/>',
-        unselectedImg: '<c:url value="/images/bookmark-unselected.png"/>'
+        unselectedImg: '<c:url value="/images/bookmark-unselected.png"/>',
+        authenticated: ${ authenticated }
     };
     <c:forEach items="${ mysessions }" var="session">
         preferences.mysessions.push('<spring:escapeBody javaScriptEscape="true">${session}</spring:escapeBody>');
@@ -92,7 +93,6 @@ ${n}.jQuery(document).ready(function () {
             <a href="javascript:;" class="ui-btn-left browse-sessions-button" data-icon="home" data-iconpos="notext">
                 <span>Home</span>
             </a>
-            </div>
         </div>
         <div data-role="content" class="portlet-content">
             <ul data-role="listview" class="session-list"></ul>
@@ -164,8 +164,10 @@ ${n}.jQuery(document).ready(function () {
         </div>
         <div data-role="content" class="portlet-content">
             <h3>
-                <a href="javascript:;" class="add-session-link"><img src="<c:url value="/images/bookmark-unselected.png"/>"/></a>
-                <a href="javascript:;" class="remove-session-link"><img src="<c:url value="/images/bookmark-selected.png"/>"/></a>
+                <c:if test="${ authenticated }">
+                    <a href="javascript:;" class="add-session-link"><img src="<c:url value="/images/bookmark-unselected.png"/>"/></a>
+                    <a href="javascript:;" class="remove-session-link"><img src="<c:url value="/images/bookmark-selected.png"/>"/></a>
+                </c:if>
                 <span class="session-title"></span>
             </h3>
             <p>When: <span class="time"/> on <span class="date"/></p>
