@@ -74,8 +74,7 @@ public class MainController {
         // determine if the request represents a mobile browser and set the
         // view name accordingly
         final boolean isMobile = viewSelector.isMobile(request);
-//        final String viewName = isMobile ? "main-jQM" : "main";        
-        final String viewName = "main-jQM";        
+        final String viewName = isMobile ? "main-jQM" : "main";
         final ModelAndView mav = new ModelAndView(viewName);
         
         if(logger.isDebugEnabled()) {

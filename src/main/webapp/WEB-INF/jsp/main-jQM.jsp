@@ -21,247 +21,33 @@
 
 <jsp:directive.include file="/WEB-INF/jsp/include.jsp"/>
 <c:set var="n"><portlet:namespace/></c:set>
+<script type="text/javascript" src="<c:url value="/js/conference-program.js"/>"></script>
 
-<script type="text/javascript">
+<script type="text/javascript"><rs:compressJs>
+var ${n} = ${n} || {};
+${n}.jQuery = up.jQuery;
+if (!conference.initialized) conference.init(${n}.jQuery);
+${n}.conference = conference;
+
+${n}.jQuery(document).ready(function () { 
+
+    var $ = ${n}.jQuery;
+    
+    var preferences = {
+        programUrl: '<c:url value="/service/program/${hash}.json"/>',
+        updateUrl: '<portlet:resourceURL/>',
+        mysessions: [],
+        selectedImg: '<c:url value="/images/bookmark-selected.png"/>',
+        unselectedImg: '<c:url value="/images/bookmark-unselected.png"/>'
+    };
+    <c:forEach items="${ mysessions }" var="session">
+        preferences.mysessions.push('<spring:escapeBody javaScriptEscape="true">${session}</spring:escapeBody>');
+    </c:forEach>    
         
-    up.jQuery(function () {
-        var $, mysessions, sessions, itemTemplate, linkItemTemplate, headerTemplate, currentDateIndex, currentView, lastView;
-        
-        $ = up.jQuery;
-        
-        currentDateIndex = 1;
-
-        itemTemplate = $("#${n} .list-template .item-template");
-        linkItemTemplate = $("#${n} .list-template .link-item-template");
-        headerTemplate = $("#${n} .list-template .header-template");
-        
-        mysessions = [];
-        <c:forEach items="${ mysessions }" var="session">
-        mysessions.push('<spring:escapeBody javaScriptEscape="true">${session}</spring:escapeBody>');
-        </c:forEach>
-        
-        var addSession = function(title) {
-            mysessions.push(title);
-            $.post("<portlet:resourceURL/>", { add: true, title: title }, null, "json");
-        };
-
-        var removeSession = function(title) {
-            mysessions.splice($.inArray(title, mysessions), 1);
-            $.post("<portlet:resourceURL/>", { add: false, title: title }, null, "json");
-        };
-
-
-        var sortSessions = function (a, b) {
-            return (a.timestamp - b.timestamp);
-        };
-        
-        var renderSessionList = function(list, includeTimes) {
-            var lastTime, container, isBrowse;
-            
-            container = $("#${n} " + currentView + " .session-list");
-            isBrowse = (currentView == ".browse-sessions");
-
-            // make sure the sessions are sorted
-            list.sort(sortSessions);
-            
-            // remove any previous results
-            container.find("li").remove();
-
-            $(list).each(function (idx, session) { 
-                if (includeTimes && session.time !== lastTime) {
-                    var newTimeNode = headerTemplate.clone().text(session.time);
-                    container.append(newTimeNode);
-                    lastTime = session.time;
-                }
-
-                var newNode = linkItemTemplate.clone();
-                $(newNode).find("a").click(function () { showDetails(session); });
-                $(newNode).find("h3").text(session.title);
-
-                var selectedImg = '<c:url value="/images/bookmark-selected.png"/>';
-                var unselectedImg = '<c:url value="/images/bookmark-unselected.png"/>';
-                
-                var img = $(document.createElement("img")).attr("src", $.inArray(session.title, mysessions) >= 0 ? selectedImg : unselectedImg).click(function () {
-                    if ($.inArray(session.title, mysessions) >= 0) {
-                        removeSession(session.title);
-                        $(this).attr("src", unselectedImg)
-                    } else {
-                        addSession(session.title);
-                        $(this).attr("src", selectedImg);
-                    }
-                    return false;
-                });
-                $(newNode).find("p").html("").append(img).append($(document.createElement("span")).text(includeTimes ? session.room : session.time + " " + session.displayDate));
-                container.append(newNode);                    
-            });
-            
-            container.find("li").show();
-        };
-        
-        var showView = function(view) {
-            $("#${n} .browse-sessions").hide();
-            $("#${n} .my-sessions").hide();
-            $("#${n} .search-results").hide();
-            $("#${n} .session-search-form").hide();
-            $("#${n} .session-details").hide();
-
-            if (view) {
-                lastView = currentView;
-                currentView = view;
-            }
-            
-            if (currentView == '.my-sessions' || currentView == '.browse-sessions') {
-                showSessions();
-            } else if (currentView == '.search-results') {
-                search();
-            }
-            
-            $("#${n} " + currentView).show();
-        };
-        
-        var showSessions = function () {
-            var matching = [];
-            var dateKey = $("#${n} .session-search-form [name=date]").find("option:eq(" + currentDateIndex + ")").attr("value");
-            var dateName = $("#${n} .session-search-form [name=date]").find("option:eq(" + currentDateIndex + ")").text();
-
-            $(sessions).each(function (idx, session) {
-                if (session.date === dateKey && (currentView != '.my-sessions' || $.inArray(session.title, mysessions) >= 0)) {
-                    matching.push(session);
-                }
-            });
-
-            $("#${n} .date-name").text(dateName);
-            if (currentDateIndex == 1) {
-                $("#${n} .program-date-back-link").hide();
-            } else {
-                $("#${n} .program-date-back-link").show();
-            }
-            
-            if (currentDateIndex == $("#${n} .session-search-form [name=date] option").size()-1) {
-                $("#${n} .program-date-forward-link").hide();
-            } else {
-                $("#${n} .program-date-forward-link").show();
-            }
-            
-            renderSessionList(matching, true);
-        };
-        
-        var showDetails = function (session) {
-            var detailsView = $("#${n} .session-details");
-            
-            // bind session to data
-            detailsView.find(".session-title").text(session.title);
-            detailsView.find(".time").text(session.time + " on " + session.displayDate);
-            detailsView.find(".room").text(session.room);
-            if (session.track && session.track !== 'Unknown') {
-                detailsView.find(".track").show().find(".track-name").text(session.track);
-            } else {
-                detailsView.find(".track").hide().find(".track-name").text("");
-            }
-            if (session.level && session.level !== 'Unknown') {
-                detailsView.find(".level").show().find(".level-name").text(session.level);
-            } else {
-                detailsView.find(".level").hide().find(".level-name").text("");
-            }
-            detailsView.find(".details").text(session.details);
-            
-            if (session.presenters.length > 0) {
-                $(".presenter-list").text("");
-                $(session.presenters).each(function (idx, presenter) {
-                    $(detailsView).find(".presenter-list").append($(document.createElement("li")).text(presenter));
-                });
-                $(detailsView).find(".presenters").show();
-            } else {
-                $(detailsView).find(".presenters").hide();
-            }
-
-            detailsView.find(".remove-session-link").show().unbind('click').click(function () { 
-                removeSession(session.title); 
-                $(detailsView).find(".remove-session-link").hide();
-                $(detailsView).find(".add-session-link").show();
-            });
-            detailsView.find(".add-session-link").show().unbind('click').click(function () { 
-                addSession(session.title);
-                $(detailsView).find(".remove-session-link").show();
-                $(detailsView).find(".add-session-link").hide();
-            });
-
-            if ($.inArray(session.title, mysessions) >= 0) {
-                detailsView.find(".add-session-link").hide();
-            } else {
-                detailsView.find(".remove-session-link").hide();
-            }
-
-            showView(".session-details");
-        };
-
-        var changeDate = function (days) {
-            currentDateIndex += days;
-            showSessions();
-        };
-        
-        var search = function () {
-            var matching, title, date, track, level, type;
-            
-            var form = $("#${n} .session-search-form");
-            
-            title = form.find("[name=title]").val();
-            date = form.find("[name=date]").val();
-            track = form.find("[name=track]").val();
-            level = form.find("[name=level]").val();
-            type = form.find("[name=type]").val();
-            presenter = form.find("[name=presenter]").val();
-            
-            matching = [];
-            $(sessions).each(function (idx, session) {
-                if (
-                    (!title || session.title.toLowerCase().indexOf(title.toLowerCase()) >= 0) &&
-                    (!date || session.date === date) &&
-                    (!track || session.track === track) &&
-                    (!level || session.level === level) &&
-                    (!type || session.type === type) &&
-                    (!presenter || session.presenters.join(",").toLowerCase().indexOf(presenter.toLowerCase()) >= 0)
-                ) {
-                    matching.push(session);
-                }
-            });
-
-            renderSessionList(matching, false);
-
-            return false;
-
-        };
-
-        $(document).ready(function () {
-            
-            $("#${n} .session-search-form").submit(function () { showView(".search-results"); return false; });
-            
-            $("#${n} .program-search-button").click(function () { showView(".session-search-form"); });
-            $("#${n} .search-back-button").click(function() { showView(".browse-sessions"); });
-            $("#${n} .matches-back-button").click(function () { showView(".session-search-form"); });
-            $("#${n} .details-back-button").click(function () { showView(lastView); });
-            
-            $("#${n} .program-date-back-link").click(function () { changeDate(-1); });
-            $("#${n} .program-date-forward-link").click(function () { changeDate(1); });
-            
-            $("#${n} .my-sessions-button").click(function () { showView(".my-sessions"); });
-            $("#${n} .browse-sessions-button").click(function () { showView(".browse-sessions"); });
-                
-            $.get(
-                '<c:url value="/service/program/${hash}.json"/>',
-                {},
-                function (data) {
-                    sessions = data.sessions;
-                    showView(".browse-sessions");
-                },
-                "json"
-            );
-            
-        });
-        
-    });    
-
-</script>
+    conference.program($("#${n}"), preferences);
+    
+});
+</rs:compressJs></script>
 
 <div id="${n}">
 
@@ -281,12 +67,16 @@
                 <span class="date-name"></span>
                 <a data-role="button" data-icon="arrow-r" data-iconpos="notext" data-inline="true" class="program-date-forward-link" href="javascript:;">&gt;</a>
             </h2>
-            <a href="javascript:;" class="ui-btn-right program-search-button" data-icon="search" data-iconpos="notext">
-                <span>Search</span>
-            </a>
-            <a href="javascript:;" class="ui-btn-left my-sessions-button" data-icon="star" data-iconpos="notext">
-                <span>Mine</span>
-            </a>
+            <div class="toolbar">
+                <ul>            
+                    <li><a href="javascript:;" class="ui-btn-right program-search-button" data-icon="search" data-iconpos="notext">
+                        <span>Search</span>
+                    </a></li>
+                    <li><a href="javascript:;" class="ui-btn-left my-sessions-button" data-icon="star" data-iconpos="notext">
+                        <span>Mine</span>
+                    </a></li>
+                </ul>
+            </div>
         </div>
         <div data-role="content" class="portlet-content">
             <ul data-role="listview" class="session-list"></ul>
@@ -300,12 +90,16 @@
                 <span class="date-name"></span>
                 <a data-role="button" data-icon="arrow-r" data-iconpos="notext" data-inline="true" class="program-date-forward-link" href="javascript:;">&gt;</a>
             </h2>
-            <a href="javascript:;" class="ui-btn-right program-search-button" data-icon="search" data-iconpos="notext">
-                <span>Search</span>
-            </a>
-            <a href="javascript:;" class="ui-btn-left browse-sessions-button" data-icon="home" data-iconpos="notext">
-                <span>Home</span>
-            </a>
+            <div class="toolbar">
+                <ul>            
+                    <li><a href="javascript:;" class="ui-btn-right program-search-button" data-icon="search" data-iconpos="notext">
+                        <span>Search</span>
+                    </a></li>
+                    <li><a href="javascript:;" class="ui-btn-left browse-sessions-button" data-icon="home" data-iconpos="notext">
+                        <span>Home</span>
+                    </a></li>
+                </ul>
+            </div>
         </div>
         <div data-role="content" class="portlet-content">
             <ul data-role="listview" class="session-list"></ul>
