@@ -37,6 +37,7 @@ import org.joda.time.format.DateTimeFormatterBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
 
 public class ConferenceSessionDao {
@@ -74,7 +75,8 @@ public class ConferenceSessionDao {
         this.programUrl = programUrl;
     }
     
-    protected ConferenceProgram retrieveProgram() {
+    @Scheduled(fixedRate=900000)
+    protected void retrieveProgram() {
         log.debug("Requesting program data from " + this.programUrl);
         final ConferenceProgram program = restTemplate.getForObject(programUrl,
                 ConferenceProgram.class, Collections.<String, String> emptyMap());
@@ -128,25 +130,20 @@ public class ConferenceSessionDao {
             cache.put(new Element(TYPE_LIST_KEY, types));
             cache.put(new Element(DATE_MAP_KEY, dateMap));
             
-            return program;
-
         }
-        
-        return null;
         
     }
 
     public ConferenceProgram getProgram() {
-        final Element cachedProgram = this.cache.get(PROGRAM_CACHE_KEY);
+        Element cachedProgram = this.cache.get(PROGRAM_CACHE_KEY);
         
-        if (cachedProgram != null) {
-            log.debug("Retrieving program from cache");
-            return (ConferenceProgram) cachedProgram.getValue();
+        if (cachedProgram == null) {
+            retrieveProgram();
+            cachedProgram = this.cache.get(PROGRAM_CACHE_KEY);
         } 
-        
-        else {
-            return retrieveProgram();
-        }
+
+        log.debug("Retrieving program from cache");
+        return (ConferenceProgram) cachedProgram.getValue();
     }
     
     public List<String> getTracks() {
